@@ -24,6 +24,7 @@ echo "total events found: " ${total_files}
 mv xx* ${temp_dir} && cd ${temp_dir}
 
 # time to remove what we do not need
+# TODO: preserve reoccurring events in case they have DEND after $YEAR
 grep -R DTSTART . | sed -s "s/\.\/\(xx[0-9]\+\).*:\([0-9]\{4\}\).*/\1 \2/g" | awk '{if($2>="'"$YEAR"'") print $1;}' | xargs -L 1 cat > events
 sed -i '/END:VCALENDAR/d' events
 
