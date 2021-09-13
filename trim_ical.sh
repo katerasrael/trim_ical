@@ -1,12 +1,58 @@
 #!/bin/sh
 
-# first argument - the calendar file
-# second argument - the year.
-
 # All of the events preceeding the year will be removed from the calendar.
 
-CALENDAR_FILE=$1
-YEAR=$2
+# Arguments:
+# -h help / usage
+# -i the calendar inputfile
+# -y all events preceeding the year will be removed
+# -o outputfile
+# -p file to contain the preceding events
+# -v be verbose
+
+CALENDAR_FILE=""
+OUT_FILE=""
+PRE_FILE=""
+YEAR=""
+VERBOSE=false
+
+usage() { echo "Usage: $0 [-h help] [-y <year all events preceding the year will be removed] [-i <inputfile>] [-o <outputfile with events after year>] [-p <file to contain the preceeding events>]" 1>&2; exit 0; }
+
+while getopts ":hvy:i:o:p:" o; do
+    case "${o}" in
+        i)
+            CALENDAR_FILE=${OPTARG}
+            ;;
+        o)
+            OUT_FILE=${OPTARG}
+            ;;
+        p)
+            PRE_FILE=${OPTARG}
+            ;;
+        y)
+            YEAR=${OPTARG}
+            ;;
+        v)
+            VERBOSE=true
+            ;;
+		h)
+        *)
+            usage
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+if [ -z "${CALENDAR_FILE}" ] || [ -z "${OUT_FILE}" ] || [ -z "${PRE_FILE}" ] || [ -z "${YEAR}" ]; then
+    usage
+fi
+
+if $VERBOSE; then
+	echo "CALENDAR_FILE = ${CALENDAR_FILE}"
+	echo "OUT_FILE = ${OUT_FILE}"
+	echo "PRE_FILE = ${PRE_FILE}"
+	echo "YEAR = ${YEAR}"
+fi
 
 temp_dir=$(mktemp -d)
 temp_files_digits=5
@@ -28,51 +74,58 @@ mv xx00 xx`printf "%05d" $((total_files-1))`
 
 mv xx01 endcontent
 
-
-echo "total events found: " ${total_files}
+if $VERBOSE; then
+	echo "total events found: " ${total_files}
+fi
 
 # move the events to a separate temp directory
 mv xx* endcontent ${temp_dir} && cd ${temp_dir}
 
-# time to remove what we do not need
-# TODO: preserve reoccurring events in case they have DEND after $YEAR
-#grep -R DTSTART . | sed -s "s/\.\/\(xx[0-9]\+\).*:\([0-9]\{4\}\).*/\1 \2/g" | awk '{if($2>="'"$YEAR"'") print $1;}' | xargs -L 1 cat > events
-
 for f in ./*
 do
-	echo "Processing $f file..."
+	if $VERBOSE; then
+		echo "Processing $f file..."
+	fi
 	if grep -q RRULE $f; then	# check for reoccurring events
 		if grep -q "UNTIL=" $f; then
 			endjahr=$( grep -R RRULE $f | grep -R "UNTIL" | grep -v "WKST" | cut -d"=" -f3 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
-	                if [ "$endjahr" -ge  "$YEAR" ]; then
-				echo "RRULE $endjahr ist größergleich als $YEAR in $f"
+			if [ "$endjahr" -ge  "$YEAR" ]; then
+				if $VERBOSE; then
+					echo "RRULE $endjahr ist größergleich als $YEAR in $f"
+				fi
 				cat $f >> events
 			fi
 		else
-			echo "RRULE ohne Enddatum"
+			if $VERBOSE; then
+				echo "RRULE ohne Enddatum"
+			fi
 			cat $f >> events
 		fi
 	else	# no reoccurring event, so check the DTSTART-Date
 		endjahr=$(grep -R DTSTART $f |  cut -d":" -f2 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
-		echo "DTSTART endjahr ist $endjahr"
-                if [ $endjahr \> "$YEAR" ]
-			 then
-                        	cat $f >> events
+		if $VERBOSE; then
+			echo "DTSTART endjahr ist $endjahr"
+		fi
+		if [ $endjahr \> "$YEAR" ]; then
+			if $VERBOSE; then
 				echo "DTSTART $endjahr ist größergleich als $YEAR in $f"
-                fi
+			fi
+			cat $f >> events
+		fi
 	fi
 done
 
 sed -i '/END:VCALENDAR/d' events
 
 # reassemblee
-cat xx00000 events xx`printf "%05d" $((total_files-1))` endcontent > ${CALENDAR_FILE}
+cat xx00000 events xx`printf "%05d" $((total_files-1))` endcontent > ${OUT_FILE}
 
 # cleaning
 cd ${rpwd}
-rm ${CALENDAR_FILE}
-mv ${temp_dir}/${CALENDAR_FILE} ${CALENDAR_FILE}
+mv ${temp_dir}/${OUT_FILE} ${OUT_FILE}
 
 rm -rf ${temp_dir}
 
-echo "your new ics file is here: ${rpwd}/${CALENDAR_FILE}"
+if $VERBOSE; then
+	echo "your new ics file is here: ${rpwd}/${CALENDAR_FILE}"
+fi
