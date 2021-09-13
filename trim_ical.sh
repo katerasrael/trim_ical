@@ -110,15 +110,19 @@ do
 			cat $f >> events
 		fi
 	else	# no reoccurring event, so check the DTSTART-Date
-		endjahr=$(grep -R DTSTART $f |  cut -d":" -f2 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
+		event_start=$(grep -R DTSTART $f |  cut -d":" -f2 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
 		if $VERBOSE; then
-			echo "DTSTART endjahr ist $endjahr"
+			echo "DTSTART ist $event_start"
 		fi
-		if [ "$endjahr" \> "$YEAR" ]; then
+		if [ "$event_start" \> "$YEAR" ]; then
 			if $VERBOSE; then
-				echo "DTSTART $endjahr ist größergleich als $YEAR in $f"
+				echo "DTSTART $event_start ist größergleich als $YEAR in $f"
 			fi
 			cat $f >> events
+		else # save the older events
+			if [ "${PRE_FILE}" ]; then
+				cat $f >> pre_events
+			fi
 		fi
 	fi
 done
@@ -126,12 +130,25 @@ done
 # reassemble
 cat startcontent events endcontent > ${OUT_FILE}
 
+if [ "${PRE_FILE}" ]; then
+	cat startcontent pre_events endcontent > ${PRE_FILE}
+fi
+
+
+
 # cleaning
 cd ${rpwd}
 mv ${temp_dir}/${OUT_FILE} ${OUT_FILE}
+if [ "${PRE_FILE}" ]; then
+	${temp_dir}/${PRE_FILE} ${PRE_FILE}
+fi
 
 rm -rf ${temp_dir}
 
 if $VERBOSE; then
-	echo "your new ics file is here: ${rpwd}/${CALENDAR_FILE}"
+	echo "your new ics file is here: ${rpwd}/${OUT_FILE}"
+	
+	if [ "${PRE_FILE}" ]; then
+		echo "your new ics file is here: ${rpwd}/${PRE_FILE}"
+	fi
 fi
