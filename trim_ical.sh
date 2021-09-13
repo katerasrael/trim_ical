@@ -36,6 +36,8 @@ while getopts ":hvy:i:o:p:" o; do
             VERBOSE=true
             ;;
 		h)
+            usage
+            ;;
         *)
             usage
             ;;
@@ -57,9 +59,6 @@ fi
 temp_dir=$(mktemp -d)
 temp_files_digits=5
 rpwd=$(pwd)
-
-# backup the calendar just in case
-cp ${CALENDAR_FILE} ${CALENDAR_FILE}.bak
 
 # split the calendar file into separate files for each event. This script creates multiple files in the form of xx00000
 total_files=$(csplit -n ${temp_files_digits} ${CALENDAR_FILE} '/BEGIN:VEVENT/' {*} | wc -l)
@@ -89,7 +88,7 @@ do
 	if grep -q RRULE $f; then	# check for reoccurring events
 		if grep -q "UNTIL=" $f; then
 			endjahr=$( grep -R RRULE $f | grep -R "UNTIL" | grep -v "WKST" | cut -d"=" -f3 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
-			if [ "$endjahr" -ge  "$YEAR" ]; then
+			if [ $endjahr \>  "$YEAR" ]; then
 				if $VERBOSE; then
 					echo "RRULE $endjahr ist größergleich als $YEAR in $f"
 				fi
