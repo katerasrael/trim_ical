@@ -64,7 +64,7 @@ rpwd=$(pwd)
 cp $CALENDAR_FILE ${temp_dir} && cd ${temp_dir}
 
 # split the calendar file into separate files for each event. This script creates multiple files in the form of xx00000
-total_files=$(csplit -s -n ${temp_files_digits} ${CALENDAR_FILE} '/BEGIN:VEVENT/' {*} | wc -l)
+total_files=$(csplit -n ${temp_files_digits} ${CALENDAR_FILE} '/BEGIN:VEVENT/' {*} | wc -l)
 
 if $VERBOSE; then
 	echo "total events found: " ${total_files}
@@ -122,9 +122,6 @@ do
 		fi
 	fi
 done
-
-# add ending marker
-sed -i '/END:VCALENDAR/d' events
 
 # reassemble
 cat startcontent events endcontent > ${OUT_FILE}
