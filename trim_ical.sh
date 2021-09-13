@@ -64,24 +64,30 @@ rpwd=$(pwd)
 cp $CALENDAR_FILE ${temp_dir} && cd ${temp_dir}
 
 # split the calendar file into separate files for each event. This script creates multiple files in the form of xx00000
-total_files=$(csplit -n ${temp_files_digits} ${CALENDAR_FILE} '/BEGIN:VEVENT/' {*} | wc -l)
-
-# this last line leads to a last event which could contain some unwantend content after the END:VEVENT
-# slipt of the last event
-csplit --suppress-matched xx`printf "%05d" $((total_files-1))` '/END:VEVENT/'
-
-# add end
-echo "END:VEVENT" >> xx00
-mv xx00 xx`printf "%05d" $((total_files-1))`
-
-mv xx00000 startcontent
-mv xx01 endcontent
+total_files=$(csplit -s -n ${temp_files_digits} ${CALENDAR_FILE} '/BEGIN:VEVENT/' {*} | wc -l)
 
 if $VERBOSE; then
 	echo "total events found: " ${total_files}
 fi
 
-endjahr=0
+# rename the leading content from the input file
+mv xx00000 startcontent
+
+# this last line leads to a last event which could contain some unwantend content after the END:VEVENT
+# slipt of the last event
+csplit -s --suppress-matched xx`printf "%05d" $((total_files-1))` '/END:VEVENT/'
+
+# add end
+echo "END:VEVENT" >> xx00
+
+# make it the last event-file
+mv xx00 xx`printf "%05d" $((total_files-1))`
+
+# strip the "END:VEVENT" of the event before...
+sed -i '1d' xx01
+
+# rename it
+mv xx01 endcontent
 
 for f in ./xx*
 do
@@ -117,9 +123,10 @@ do
 	fi
 done
 
+# add ending marker
 sed -i '/END:VCALENDAR/d' events
 
-# reassemblee
+# reassemble
 cat startcontent events endcontent > ${OUT_FILE}
 
 # cleaning
