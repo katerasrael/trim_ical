@@ -60,6 +60,9 @@ temp_dir=$(mktemp -d)
 temp_files_digits=5
 rpwd=$(pwd)
 
+# move the events to a separate temp directory
+cp $CALENDAR_FILE ${temp_dir} && cd ${temp_dir}
+
 # split the calendar file into separate files for each event. This script creates multiple files in the form of xx00000
 total_files=$(csplit -n ${temp_files_digits} ${CALENDAR_FILE} '/BEGIN:VEVENT/' {*} | wc -l)
 
@@ -68,19 +71,19 @@ total_files=$(csplit -n ${temp_files_digits} ${CALENDAR_FILE} '/BEGIN:VEVENT/' {
 csplit --suppress-matched xx`printf "%05d" $((total_files-1))` '/END:VEVENT/'
 
 # add end
-echo "END:VEVENT/" >> xx00
+echo "END:VEVENT" >> xx00
 mv xx00 xx`printf "%05d" $((total_files-1))`
 
+mv xx00000 startcontent
 mv xx01 endcontent
 
 if $VERBOSE; then
 	echo "total events found: " ${total_files}
 fi
 
-# move the events to a separate temp directory
-mv xx* endcontent ${temp_dir} && cd ${temp_dir}
+endjahr=0
 
-for f in ./*
+for f in ./xx*
 do
 	if $VERBOSE; then
 		echo "Processing $f file..."
@@ -88,7 +91,7 @@ do
 	if grep -q RRULE $f; then	# check for reoccurring events
 		if grep -q "UNTIL=" $f; then
 			endjahr=$( grep -R RRULE $f | grep -R "UNTIL" | grep -v "WKST" | cut -d"=" -f3 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
-			if [ $endjahr \>  "$YEAR" ]; then
+			if [ "$endjahr" \>  "$YEAR" ]; then
 				if $VERBOSE; then
 					echo "RRULE $endjahr ist größergleich als $YEAR in $f"
 				fi
@@ -105,7 +108,7 @@ do
 		if $VERBOSE; then
 			echo "DTSTART endjahr ist $endjahr"
 		fi
-		if [ $endjahr \> "$YEAR" ]; then
+		if [ "$endjahr" \> "$YEAR" ]; then
 			if $VERBOSE; then
 				echo "DTSTART $endjahr ist größergleich als $YEAR in $f"
 			fi
@@ -117,7 +120,7 @@ done
 sed -i '/END:VCALENDAR/d' events
 
 # reassemblee
-cat xx00000 events xx`printf "%05d" $((total_files-1))` endcontent > ${OUT_FILE}
+cat startcontent events endcontent > ${OUT_FILE}
 
 # cleaning
 cd ${rpwd}
