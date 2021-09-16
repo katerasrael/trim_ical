@@ -96,11 +96,7 @@ do
 	fi
 	if grep -q RRULE $f; then	# check for reoccurring events
 		if grep -q "UNTIL=" $f; then
-			if grep -q "WKST=" $f; then # there are two "=" in the line...
-				endjahr=$( grep RRULE $f | grep "UNTIL" | cut -d"=" -f4 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
-			else
-				endjahr=$( grep RRULE $f | grep "UNTIL" | cut -d"=" -f3 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
-			fi
+			endjahr=$( grep RRULE $f | | sed 's/^.*UNTIL=//' | sed -s "s/\([0-9]\{4\}\).*/\1/g")
 			if [ "$endjahr" -ge "$YEAR" ]; then
 				if $VERBOSE; then
 					echo "RRULE $endjahr ist größergleich als $YEAR in $f"
