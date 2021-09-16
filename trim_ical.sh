@@ -102,6 +102,13 @@ do
 					echo "RRULE $endjahr ist größergleich als $YEAR in $f"
 				fi
 				cat $f >> events
+			else
+				if $VERBOSE; then
+					echo "RRULE $endjahr ist kleiner als $YEAR in $f"
+				fi
+				if [ "${PRE_FILE}" ]; then
+					cat $f >> pre_events
+				fi
 			fi
 		else
 			if $VERBOSE; then
@@ -109,21 +116,21 @@ do
 			fi
 			cat $f >> events
 		fi
-		if [ "${PRE_FILE}" ]; then
-			if $VERBOSE; then
-				echo "PRE_FILE:"
-			fi
-			event_start=$(grep DTSTART $f |  cut -d":" -f2 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
-			if $VERBOSE; then
-				echo "PRE_FILE: DTSTART ist $event_start"
-			fi
-			if [ "$event_start" -lt "$YEAR" ]; then
-				if $VERBOSE; then
-					echo "PRE_FILE: DTSTART $event_start ist größergleich als $YEAR in $f"
-				fi
-				cat $f >> pre_events
-			fi
-		fi
+#		if [ "${PRE_FILE}" ]; then
+#			if $VERBOSE; then
+#				echo "RRULE PRE_FILE:"
+#			fi
+#			event_start=$(grep DTSTART $f |  cut -d":" -f2 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
+#			if $VERBOSE; then
+#				echo "PRE_FILE: DTSTART ist $event_start"
+#			fi
+#			if [ "$event_start" -lt "$YEAR" ]; then
+#				if $VERBOSE; then
+#					echo "PRE_FILE: DTSTART $event_start ist größergleich als $YEAR in $f"
+#				fi
+#				cat $f >> pre_events
+#			fi
+#		fi
 	else	# no reoccurring event, so check the DTSTART-Date
 		event_start=$(grep -R DTSTART $f |  cut -d":" -f2 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
 		if $VERBOSE; then
@@ -135,6 +142,9 @@ do
 			fi
 			cat $f >> events
 		else # save the older events
+			if $VERBOSE; then
+				echo "DTSTART $event_start ist kleiner als $YEAR in $f"
+			fi
 			if [ "${PRE_FILE}" ]; then
 				cat $f >> pre_events
 			fi
@@ -153,7 +163,7 @@ fi
 cd ${rpwd}
 mv ${temp_dir}/${OUT_FILE} ${OUT_FILE}
 if [ "${PRE_FILE}" ]; then
-	${temp_dir}/${PRE_FILE} ${PRE_FILE}
+	mv ${temp_dir}/${PRE_FILE} ${PRE_FILE}
 fi
 
 rm -rf ${temp_dir}
