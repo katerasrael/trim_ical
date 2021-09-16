@@ -5,5 +5,5 @@ Forked from https://gist.github.com/pboesch/7846aed47914adc7f34c527fceb8d200
 ## Usage:
 
 ```
-./ical_trim.sh Personal 2016 # removes all events starting before the year 2016 from the calendar stored in Personal.ics file
+./trim_ical.sh -y year -i input_file -o output_file [-p preceding_file] [-d] # removes all events starting before the year 2016 from the calendar stored in Personal.ics file
 ```

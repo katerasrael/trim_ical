@@ -1,7 +1,12 @@
 #!/bin/sh
-
+#
+# This is a fork from https://gist.github.com/pboesch/7846aed47914adc7f34c527fceb8d200
+#
+# 2021 extended by Amdreas Bär, asbaer@asrael.franken.de
+#
+#
 # All of the events preceeding the year will be removed from the calendar.
-
+#
 # Arguments:
 # -h help / usage
 # -i the calendar inputfile
@@ -9,6 +14,8 @@
 # -o outputfile
 # -p file to contain the preceding events
 # -d display some debug messages
+
+# KNOWN BUGS: calendar inputfile must be placed in the current directory paths are not respected
 
 CALENDAR_FILE=""
 OUT_FILE=""
