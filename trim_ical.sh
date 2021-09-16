@@ -45,7 +45,7 @@ while getopts ":hvy:i:o:p:" o; do
 done
 shift $((OPTIND-1))
 
-if [ -z "${CALENDAR_FILE}" ] || [ -z "${OUT_FILE}" ] || [ -z "${PRE_FILE}" ] || [ -z "${YEAR}" ]; then
+if [ -z "${CALENDAR_FILE}" ] || [ -z "${OUT_FILE}" ] || [ -z "${YEAR}" ]; then
     usage
 fi
 
@@ -96,8 +96,8 @@ do
 	fi
 	if grep -q RRULE $f; then	# check for reoccurring events
 		if grep -q "UNTIL=" $f; then
-			endjahr=$( grep -R RRULE $f | grep -R "UNTIL" | grep -v "WKST" | cut -d"=" -f3 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
-			if [ "$endjahr" \>= "$YEAR" ]; then
+			endjahr=$( grep RRULE $f | grep -R "UNTIL" | grep -v "WKST" | cut -d"=" -f3 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
+			if [ "$endjahr" -ge "$YEAR" ]; then
 				if $VERBOSE; then
 					echo "RRULE $endjahr ist größergleich als $YEAR in $f"
 				fi
@@ -110,11 +110,14 @@ do
 			cat $f >> events
 		fi
 		if [ "${PRE_FILE}" ]; then
-			event_start=$(grep -R DTSTART $f |  cut -d":" -f2 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
+			if $VERBOSE; then
+				echo "PRE_FILE:"
+			fi
+			event_start=$(grep DTSTART $f |  cut -d":" -f2 | sed -s "s/\([0-9]\{4\}\).*/\1/g")
 			if $VERBOSE; then
 				echo "PRE_FILE: DTSTART ist $event_start"
 			fi
-			if [ "$event_start" \< "$YEAR" ]; then
+			if [ "$event_start" -lt "$YEAR" ]; then
 				if $VERBOSE; then
 					echo "PRE_FILE: DTSTART $event_start ist größergleich als $YEAR in $f"
 				fi
@@ -126,7 +129,7 @@ do
 		if $VERBOSE; then
 			echo "DTSTART ist $event_start"
 		fi
-		if [ "$event_start" \>= "$YEAR" ]; then
+		if [ "$event_start" -ge "$YEAR" ]; then
 			if $VERBOSE; then
 				echo "DTSTART $event_start ist größergleich als $YEAR in $f"
 			fi
