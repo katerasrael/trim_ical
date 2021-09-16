@@ -18,7 +18,7 @@ DEBUG=false
 
 usage() { echo "Usage: $0 [-h help] [-d debug] [-y <year all events preceding the year will be removed] [-i <inputfile>] [-o <outputfile with events after year>] [-p <file to contain the preceeding events>]" 1>&2; exit 0; }
 
-while getopts ":hvy:i:o:p:" o; do
+while getopts ":hdy:i:o:p:" o; do
     case "${o}" in
         i)
             CALENDAR_FILE=${OPTARG}
